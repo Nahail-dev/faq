@@ -2,70 +2,35 @@
 
 import React, { useState } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import faqdata from "@/app/test_data.json"
 
-interface FAQItem {
-  question: string
-  answer: string
-  category: 'Platform' | 'Pricing' | 'Subscription'
-}
-
-const faqData: FAQItem[] = [
-  {
-    question: "This is frequently asked question 1",
-    answer: "Our app is designed to simulate real interview scenarios, so practicing with a friend can enhance your experience. Simply switch to the \"Practice with a Friend\" mode, where you can take turns interviewing each other. It's a great way to get constructive feedback and build confidence together!",
-    category: "Platform"
-  },
-  {
-    question: "This is frequently asked question 2",
-    answer: "Answer to question 2",
-    category: "Pricing"
-  },
-  {
-    question: "This is frequently asked question 3",
-    answer: "Answer to question 3",
-    category: "Subscription"
-  },
-  {
-    question: "This is frequently asked question 4",
-    answer: "Answer to question 4",
-    category: "Platform"
-  },
-  {
-    question: "This is frequently asked question 5",
-    answer: "Answer to question 5",
-    category: "Pricing"
-  },
-  {
-    question: "This is frequently asked question 6",
-    answer: "Answer to question 6",
-    category: "Subscription"
-  }
-]
+type FAQCategory = keyof typeof faqdata.faqs | 'All' // Add 'All' as a valid tab type
 
 export default function FAQComponent() {
-  const [activeTab, setActiveTab] = useState<string>("all")
+  const [activeTab, setActiveTab] = useState<FAQCategory>("All")
   const [openItem, setOpenItem] = useState<number | null>(null)
 
-  const categories = ["All", "Platform", "Pricing", "Subscription"]
+  // Ensure "All" is the first category, check for duplicates
+  const categories = ['All', ...faqdata.tabs.filter(tab => tab.toLowerCase() !== 'all')]
 
-  const filteredFAQs = faqData.filter(item => 
-    activeTab === "all" || item.category.toLowerCase() === activeTab.toLowerCase()
-  )
+  // Handle "All" tab by combining all FAQs into one array
+  const filteredFAQs = activeTab === "All"
+    ? Object.values(faqdata.faqs).flat() // Merge all FAQs into a single array for "All" tab
+    : faqdata.faqs[activeTab] || [] // Fallback to empty array if no data for the selected tab
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h2 className="text-3xl font-bold text-center mb-2">Frequently Asked Questions</h2>
+      <h2 className="text-3xl font-bold text-center mb-2">{faqdata.title}</h2>
       <p className="text-center text-gray-600 mb-8">
-        Get clear answers to your questions, so you can focus on what matters—
-        acing your interviews with confidence.
+        {faqdata.description}
       </p>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as FAQCategory)} className="w-full">
         <TabsList className="flex justify-center rounded-full bg-gray-200 p-1 mb-8 max-w-md mx-auto transition-all duration-200 ease-in-out border-2 border-gray-300">
           {categories.map((category) => (
             <TabsTrigger
               key={category}
-              value={category.toLowerCase()}
+              value={category} // No lowercase transformation here
               className="flex-1 px-4 py-2 rounded-full transition-all duration-200 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:shadow-md hover:bg-gray-50 text-sm whitespace-nowrap"
             >
               {category}
@@ -82,9 +47,7 @@ export default function FAQComponent() {
               >
                 <span className="font-medium">{faq.question}</span>
                 <svg
-                  className={`w-5 h-5 transition-transform ${
-                    openItem === index ? 'transform rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform ${openItem === index ? 'transform rotate-180' : ''}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
