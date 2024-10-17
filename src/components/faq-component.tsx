@@ -3,10 +3,23 @@
 import React, { useState, useEffect } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
-type FAQCategory = string | 'All'; // Assuming categories are strings
+// Define the types for FAQ data
+type FAQ = {
+  question: string;
+  answer: string;
+};
+
+type FAQData = {
+  title: string;
+  description: string;
+  tabs: string[];
+  faqs: Record<string, FAQ[]>;
+};
+
+type FAQCategory = string | 'All'; // Tabs can be strings, or 'All'
 
 export default function FAQComponent() {
-  const [faqData, setFaqData] = useState<any>(null); // State to hold fetched FAQ data
+  const [faqData, setFaqData] = useState<FAQData | null>(null); // State to hold fetched FAQ data
   const [activeTab, setActiveTab] = useState<FAQCategory>("All")
   const [openItem, setOpenItem] = useState<number | null>(null)
   const [loading, setLoading] = useState(true); // To track loading state
@@ -16,7 +29,7 @@ export default function FAQComponent() {
     const fetchFAQData = async () => {
       try {
         const response = await fetch('/api/faqs'); // Fetch from the API route
-        const data = await response.json();
+        const data: FAQData = await response.json(); // Define the type of the fetched data
         setFaqData(data); // Set the fetched data
         setLoading(false); // Set loading to false after data is fetched
       } catch (error) {
@@ -37,7 +50,7 @@ export default function FAQComponent() {
   }
 
   // Ensure "All" is the first category, avoid duplicate 'All' tab
-  const categories = ['All', ...faqData.tabs.filter((tab: string) => tab !== 'All')]
+  const categories = ['All', ...faqData.tabs.filter((tab) => tab !== 'All')];
 
   // Handle "All" tab by combining all FAQs into one array
   const filteredFAQs = activeTab === "All"
@@ -65,7 +78,7 @@ export default function FAQComponent() {
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4 space-y-4">
-          {filteredFAQs.map((faq: any, index: number) => (
+          {filteredFAQs.map((faq: FAQ, index: number) => ( // Use FAQ type
             <div key={index} className="border rounded-lg shadow-sm">
               <button
                 onClick={() => setOpenItem(openItem === index ? null : index)}
