@@ -1,28 +1,54 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import faqdata from "@/app/test_data.json"
 
-type FAQCategory = keyof typeof faqdata.faqs | 'All' // Add 'All' as a valid tab type
+type FAQCategory = string | 'All'; // Assuming categories are strings
 
 export default function FAQComponent() {
+  const [faqData, setFaqData] = useState<any>(null); // State to hold fetched FAQ data
   const [activeTab, setActiveTab] = useState<FAQCategory>("All")
   const [openItem, setOpenItem] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true); // To track loading state
 
-  // Ensure "All" is the first category, check for duplicates
-  const categories = ['All', ...faqdata.tabs.filter(tab => tab.toLowerCase() !== 'all')]
+  // Fetch FAQ data from API on component mount
+  useEffect(() => {
+    const fetchFAQData = async () => {
+      try {
+        const response = await fetch('/api/faqs'); // Fetch from the API route
+        const data = await response.json();
+        setFaqData(data); // Set the fetched data
+        setLoading(false); // Set loading to false after data is fetched
+      } catch (error) {
+        console.error("Error fetching FAQ data:", error);
+        setLoading(false); // Handle fetch error
+      }
+    };
+
+    fetchFAQData();
+  }, []); // Runs once on component mount
+
+  if (loading) {
+    return <div>Loading FAQs...</div>; // Loading state
+  }
+
+  if (!faqData) {
+    return <div>Failed to load FAQ data</div>; // Handle case where data fetching fails
+  }
+
+  // Ensure "All" is the first category, avoid duplicate 'All' tab
+  const categories = ['All', ...faqData.tabs.filter((tab: string) => tab !== 'All')]
 
   // Handle "All" tab by combining all FAQs into one array
   const filteredFAQs = activeTab === "All"
-    ? Object.values(faqdata.faqs).flat() // Merge all FAQs into a single array for "All" tab
-    : faqdata.faqs[activeTab] || [] // Fallback to empty array if no data for the selected tab
+    ? Object.values(faqData.faqs).flat() // Flatten all FAQ arrays for "All"
+    : faqData.faqs[activeTab] || []; // Fallback to empty array if category doesn't exist
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h2 className="text-3xl font-bold text-center mb-2">{faqdata.title}</h2>
+      <h2 className="text-3xl font-bold text-center mb-2">{faqData.title}</h2>
       <p className="text-center text-gray-600 mb-8">
-        {faqdata.description}
+        {faqData.description}
       </p>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as FAQCategory)} className="w-full">
@@ -30,7 +56,7 @@ export default function FAQComponent() {
           {categories.map((category) => (
             <TabsTrigger
               key={category}
-              value={category} // No lowercase transformation here
+              value={category} // Keep the original category names
               className="flex-1 px-4 py-2 rounded-full transition-all duration-200 ease-in-out data-[state=active]:bg-gray-100 data-[state=active]:shadow-md hover:bg-gray-50 text-sm whitespace-nowrap"
             >
               {category}
@@ -39,7 +65,7 @@ export default function FAQComponent() {
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4 space-y-4">
-          {filteredFAQs.map((faq, index) => (
+          {filteredFAQs.map((faq: any, index: number) => (
             <div key={index} className="border rounded-lg shadow-sm">
               <button
                 onClick={() => setOpenItem(openItem === index ? null : index)}
